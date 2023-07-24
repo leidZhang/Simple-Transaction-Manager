@@ -41,6 +41,13 @@ func (TransactionManager) Prepare(ctx context.Context, req *dtm_grpc.PrepareRequ
 func (TransactionManager) Commit(ctx context.Context, req *dtm_grpc.CommitRequest) (res *dtm_grpc.CommitResponse, err error) {
 	// placeholder response
 	fmt.Println(req, "Commiting A")
+	id := req.Id
+
+	if id > 10 {
+		return &dtm_grpc.CommitResponse{
+			Status: false,
+		}, nil
+	}
 
 	return &dtm_grpc.CommitResponse{
 		Status: true,
@@ -50,6 +57,13 @@ func (TransactionManager) Commit(ctx context.Context, req *dtm_grpc.CommitReques
 func (TransactionManager) Rollback(ctx context.Context, req *dtm_grpc.RollbackRequest) (res *dtm_grpc.RollbackResponse, err error) {
 	// placeholder response
 	fmt.Println(req, "Rollbacking A")
+	id := req.Id
+
+	if id == 0 {
+		return &dtm_grpc.RollbackResponse{
+			Status: false,
+		}, nil
+	}
 
 	return &dtm_grpc.RollbackResponse{
 		Status: true,

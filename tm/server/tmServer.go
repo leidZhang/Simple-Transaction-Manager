@@ -14,9 +14,9 @@ import (
 type TransactionManager struct {
 }
 
-func errorMsg(feedback string) (res *dtm_grpc.TransactionResponse, err error) {
+func resMsg(feedback string, status bool) (res *dtm_grpc.TransactionResponse, err error) {
 	return &dtm_grpc.TransactionResponse{
-		Status:  false,
+		Status:  status,
 		Message: feedback,
 	}, nil
 }
@@ -68,23 +68,16 @@ func (TransactionManager) Transaction(ctx context.Context, req *dtm_grpc.Transac
 	idA, idB, idC := req.Id1, req.Id2, req.Id3
 	addrA, addrB, addrC := "localhost:8080", "localhost:8081", "localhost:8082"
 
-	connA, clientA, prepareResA, err := getPrepareResponse(idA, addrA)
-	if err != nil {
-		return errorMsg(err.Error())
+	connA, clientA, prepareResA, errA := getPrepareResponse(idA, addrA)
+	connB, clientB, prepareResB, errB := getPrepareResponse(idB, addrB)
+	connC, clientC, prepareResC, errC := getPrepareResponse(idC, addrC)
+	if errA == nil && errB == nil && errC == nil {
+		fmt.Println("Service A prepare", prepareResA)
+		fmt.Println("Service B prepare", prepareResB)
+		fmt.Println("Service C prepare", prepareResC)
+	} else {
+		return resMsg("Prepare failed", false)
 	}
-	fmt.Println("Service A prepare", prepareResA)
-
-	connB, clientB, prepareResB, err := getPrepareResponse(idB, addrB)
-	if err != nil {
-		return errorMsg(err.Error())
-	}
-	fmt.Println("Service B prepare", prepareResB)
-
-	connC, clientC, prepareResC, err := getPrepareResponse(idC, addrC)
-	if err != nil {
-		return errorMsg(err.Error())
-	}
-	fmt.Println("Service C prepare", prepareResC)
 
 	// begin prepare
 	statusA := prepareResA.Status
@@ -92,53 +85,37 @@ func (TransactionManager) Transaction(ctx context.Context, req *dtm_grpc.Transac
 	statusC := prepareResC.Status
 	// prepare failed, proceed to rollback
 	if !statusA || !statusB || !statusC {
-		rollbackResA, err := sendRollbackReq(idA, clientA)
-		if err != nil {
-			return errorMsg(err.Error())
-		}
-		fmt.Println("Service A rollback", rollbackResA)
-		rollbackResB, err := sendRollbackReq(idB, clientB)
-		if err != nil {
-			return errorMsg(err.Error())
-		}
-		fmt.Println("Service B rollback", rollbackResB)
-		rollbackResC, err := sendRollbackReq(idB, clientC)
-		if err != nil {
-			return errorMsg(err.Error())
-		}
-		fmt.Println("Service C rollback", rollbackResC)
-
+		rollbackResA, errA := sendRollbackReq(idA, clientA)
+		rollbackResB, errB := sendRollbackReq(idB, clientB)
+		rollbackResC, errC := sendRollbackReq(idB, clientC)
 		closeConn(connA, connB, connC)
-		fmt.Println("Transaction Failed")
-		return &dtm_grpc.TransactionResponse{
-			Status:  false,
-			Message: "Transaction Failed",
-		}, nil
+
+		if errA == nil && errB == nil && errC == nil {
+			fmt.Println("Service A rollback", rollbackResA)
+			fmt.Println("Service B rollback", rollbackResB)
+			fmt.Println("Service C rollback", rollbackResC)
+		} else {
+			return resMsg("Rollback failed", false)
+		}
+		// return false transaction response
+		return resMsg("Transaction failed", false)
 	}
 	// prepare success, proceed to commit
-	commitResA, err := sendCommitReq(idA, clientA)
-	if err != nil {
-		return errorMsg(err.Error())
+	commitResA, errA := sendCommitReq(idA, clientA)
+	commitResB, errB := sendCommitReq(idB, clientB)
+	commitResC, errC := sendCommitReq(idC, clientC)
+	closeConn(connA, connB, connC)
+
+	if errA == nil && errB == nil && errC == nil {
+		fmt.Println("Service A commit", commitResA)
+		fmt.Println("Service B commit", commitResB)
+		fmt.Println("Service C commit", commitResC)
+	} else {
+		return resMsg("Transaction Fail", false)
 	}
-	fmt.Println("Service A commit", commitResA)
-	commitResB, err := sendCommitReq(idB, clientB)
-	if err != nil {
-		return errorMsg(err.Error())
-	}
-	fmt.Println("Service B commit", commitResB)
-	commitResC, err := sendCommitReq(idC, clientC)
-	if err != nil {
-		return errorMsg(err.Error())
-	}
-	fmt.Println("Service C commit", commitResC)
 
 	// transaction complete
-	closeConn(connA, connB, connC)
-	fmt.Println("Transaction Success")
-	return &dtm_grpc.TransactionResponse{
-		Status:  true,
-		Message: "Transaction Success",
-	}, nil
+	return resMsg("Transaction success", true)
 }
 
 func (TransactionManager) Prepare(ctx context.Context, req *dtm_grpc.PrepareRequest) (res *dtm_grpc.PrepareResponse, err error) {
