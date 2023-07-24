@@ -62,5 +62,7 @@ After the installation of the requirements and clone the repository, you can run
 - To run the serviceC server, run `go run serviceC/server_c.go`
 - To send transaction request to the transaction manager server, you have to run the transaction manager client with `go run tm/client/tm_client.go`
 
+**Note：** This project uses ports 8080-8083 for communication between the transaction manager and the services. Please make sure these ports are not occupied by other processes before running this project.
+
 ## License
 This project is licensed under the Apache-2.0 license - see the LICENSE file for details.
