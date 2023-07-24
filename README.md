@@ -22,6 +22,8 @@ The system consists of 3 service server (service A, service B, and service C), a
 2. Service timeout: During the Prepare phase, some services may fail to respond in time due to network latency or high load.
 3. Partial commit or rollback: During the commit or rollback phase, a partial success may occur, that is some services successfully complete commit or rollback operations while others failed to complete. 
 
+Some of the possible scenarios is simulated in the mock services. 
+
 ### Countermeasures: 
 1. Time out handling: For prepare requests and responses, set appropriate timeout times. 
 2. Error rollback: If there is error or partial success, the transaction manager will send rollback requests to all services to ensure the transaction consistency. 
@@ -31,8 +33,8 @@ The system consists of 3 service server (service A, service B, and service C), a
 In the current design, the transaction manager does not have sufficient fault-tolerant mechanisms to cope with failures or unreachable services. If one or more services become unreachable, the transaction manager may not be able to handle the failure correclty. 
 ### Insecure Connection 
 Currently, the communication between servers is established using `grpc.Dial` with `insecure.NewCredentials()`. This results in an insecure connection without proper transport security, meaning data is transmitted in plaintext over the network. 
-### Code Snipe Repetition (improved)
-The code contains repetitive error handling code snippets of the form `if err != nil { return errorMsg(err.Error()) }`. This repetitive pattern can lead to code duplication, making the code harder to maintain and prone to potential bugs.
+### Code Snipe Repetition 
+The code contains repetitive error handling code snippets of the form `if err != nil { return errorMsg(err.Error()) }`. This repetitive pattern can lead to code duplication, making the code harder to maintain and prone to potential bugs. (improved) 
 
 ## Future Work
 ### Improve Techincal Debt
