@@ -55,10 +55,28 @@ func sendCommitReq(id int32, client dtm_grpc.TransactionManagerClient) (commitRe
 	return commitRes, err
 }
 
-func closeConn(connA *grpc.ClientConn, connB *grpc.ClientConn, connC *grpc.ClientConn) {
+func closeConn(connA, connB, connC *grpc.ClientConn) {
 	defer connA.Close()
 	defer connB.Close()
 	defer connC.Close()
+}
+
+func handlePartialSuccess(idA, idB, idC int32, clientA, clientB, clientC dtm_grpc.TransactionManagerClient, connA, connB, connC *grpc.ClientConn) (res *dtm_grpc.TransactionResponse, err error) {
+	// send rollback request
+	rollbackResA, errA := sendRollbackReq(idA, clientA)
+	rollbackResB, errB := sendRollbackReq(idB, clientB)
+	rollbackResC, errC := sendRollbackReq(idB, clientC)
+	closeConn(connA, connB, connC)
+	// check whether the services are reachable
+	if errA == nil && errB == nil && errC == nil {
+		fmt.Println("Service A rollback", rollbackResA)
+		fmt.Println("Service B rollback", rollbackResB)
+		fmt.Println("Service C rollback", rollbackResC)
+	} else {
+		return resMsg("Uable to reach some service at rollback stage", false)
+	}
+	// return false transaction response
+	return resMsg("Transaction failed", false)
 }
 
 func (TransactionManager) Transaction(ctx context.Context, req *dtm_grpc.TransactionRequest) (res *dtm_grpc.TransactionResponse, err error) {
@@ -71,12 +89,13 @@ func (TransactionManager) Transaction(ctx context.Context, req *dtm_grpc.Transac
 	connA, clientA, prepareResA, errA := getPrepareResponse(idA, addrA)
 	connB, clientB, prepareResB, errB := getPrepareResponse(idB, addrB)
 	connC, clientC, prepareResC, errC := getPrepareResponse(idC, addrC)
+	// check whether the services are reachable
 	if errA == nil && errB == nil && errC == nil {
 		fmt.Println("Service A prepare", prepareResA)
 		fmt.Println("Service B prepare", prepareResB)
 		fmt.Println("Service C prepare", prepareResC)
 	} else {
-		return resMsg("Prepare failed", false)
+		return resMsg("Unable to reach some services at prepare stage", false)
 	}
 
 	// begin prepare
@@ -85,36 +104,31 @@ func (TransactionManager) Transaction(ctx context.Context, req *dtm_grpc.Transac
 	statusC := prepareResC.Status
 	// prepare failed, proceed to rollback
 	if !statusA || !statusB || !statusC {
-		rollbackResA, errA := sendRollbackReq(idA, clientA)
-		rollbackResB, errB := sendRollbackReq(idB, clientB)
-		rollbackResC, errC := sendRollbackReq(idB, clientC)
-		closeConn(connA, connB, connC)
-
-		if errA == nil && errB == nil && errC == nil {
-			fmt.Println("Service A rollback", rollbackResA)
-			fmt.Println("Service B rollback", rollbackResB)
-			fmt.Println("Service C rollback", rollbackResC)
-		} else {
-			return resMsg("Rollback failed", false)
-		}
-		// return false transaction response
-		return resMsg("Transaction failed", false)
+		return handlePartialSuccess(idA, idB, idC, clientA, clientB, clientC, connA, connB, connC)
 	}
 	// prepare success, proceed to commit
 	commitResA, errA := sendCommitReq(idA, clientA)
 	commitResB, errB := sendCommitReq(idB, clientB)
 	commitResC, errC := sendCommitReq(idC, clientC)
-	closeConn(connA, connB, connC)
-
+	// check whether the services are reachable
 	if errA == nil && errB == nil && errC == nil {
 		fmt.Println("Service A commit", commitResA)
 		fmt.Println("Service B commit", commitResB)
 		fmt.Println("Service C commit", commitResC)
 	} else {
-		return resMsg("Transaction Fail", false)
+		return resMsg("Unable to reach some services in commit stage", false)
 	}
 
+	// begin commit
+	statusA = commitResA.Status
+	statusB = commitResB.Status
+	statusC = commitResC.Status
+	// handle parital commit
+	if !statusA || !statusB || !statusC {
+		return handlePartialSuccess(idA, idB, idC, clientA, clientB, clientC, connA, connB, connC)
+	}
 	// transaction complete
+	closeConn(connA, connB, connC)
 	return resMsg("Transaction success", true)
 }
 
