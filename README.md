@@ -56,11 +56,11 @@ To install and run this project, you need to have the following requirements:
 To clone this repository, run `git clone https://github.com/leidZhang/Simple-Transaction-Manager.git`
 
 After the installation of the requirements and clone the repository, you can run the following command to run the server: 
-- To run the transaction manager server, run `go run tm/server/tmServer.go`
-- To run the serviceA server, run `go run serviceA/serverA.go`
-- To run the serviceB server, run `go run serviceB/serverB.go`
-- To run the serviceC server, run `go run serviceC/serverC.go`
-- To send transaction request to the transaction manager server, you have to run the transaction manager client with `go run tm/client/tmClient.go`
+- To run the transaction manager server, run `go run tm/server/tm_server.go`
+- To run the serviceA server, run `go run serviceA/server_a.go`
+- To run the serviceB server, run `go run serviceB/server_b.go`
+- To run the serviceC server, run `go run serviceC/server_c.go`
+- To send transaction request to the transaction manager server, you have to run the transaction manager client with `go run tm/client/tm_client.go`
 
 ## License
 This project is licensed under the Apache-2.0 license - see the LICENSE file for details.
