@@ -1,0 +1,48 @@
+syntax = "proto3"; 
+package dtm_grpc; 
+
+option go_package = "/dtm_grpc"; 
+
+// define rpc service 
+service TransactionManager {
+    // define function 
+    rpc Transaction (TransactionRequest) returns (TransactionResponse) {} 
+    rpc Prepare (PrepareRequest) returns (PrepareResponse) {} 
+    rpc Commit (CommitRequest) returns (CommitResponse) {} 
+    rpc Rollback (RollbackRequest) returns (RollbackResponse) {} 
+}
+
+message TransactionRequest {
+    int32 id1 = 1; 
+    int32 id2 = 2; 
+    int32 id3 = 3; 
+}
+
+message TransactionResponse {
+    bool status = 1; 
+    string message = 2; 
+}
+
+message PrepareRequest {
+    int32 id = 1; 
+}
+
+message PrepareResponse {
+    bool status = 1; 
+}
+
+message CommitRequest {
+    int32 id = 1; 
+}
+
+message CommitResponse {
+    bool status = 1; 
+}
+
+message RollbackRequest {
+    int32 id = 1; 
+}
+
+message RollbackResponse {
+    bool status = 1; 
+}
