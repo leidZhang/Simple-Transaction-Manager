@@ -80,6 +80,14 @@ func handlePartialSuccess(idA, idB, idC int32, clientA, clientB, clientC dtm_grp
 }
 
 func (TransactionManager) Transaction(ctx context.Context, req *dtm_grpc.TransactionRequest) (res *dtm_grpc.TransactionResponse, err error) {
+	// defer function to handle panics
+	defer func() {
+		if r := recover(); r != nil {
+			// return the a failure response
+			res, err = resMsg(r.(error).Error(), false)
+		}
+	}()
+
 	// get transaction id
 	fmt.Println(req)
 	fmt.Println("Transaction request received")
@@ -130,6 +138,8 @@ func (TransactionManager) Transaction(ctx context.Context, req *dtm_grpc.Transac
 	// transaction complete
 	closeConn(connA, connB, connC)
 	return resMsg("Transaction success", true)
+
+	return res, err // in case panic happens
 }
 
 func (TransactionManager) Prepare(ctx context.Context, req *dtm_grpc.PrepareRequest) (res *dtm_grpc.PrepareResponse, err error) {
