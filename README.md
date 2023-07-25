@@ -24,7 +24,7 @@ The system consists of 3 service server (service A, service B, and service C), a
 
 Some of the possible scenarios is simulated in the mock services. 
 
-### Countermeasures: 
+### Remedies: 
 1. Time out handling: For prepare requests and responses, set appropriate timeout times. 
 2. Error rollback: If there is error or partial success, the transaction manager will send rollback requests to all services to ensure the transaction consistency. 
 3. Retry: In cases of unstable network or unreachable services, retry can be performed to ensure successful sending or receiving of requests.
@@ -47,7 +47,7 @@ In the current design, if the transaction manager crashes, only a false transact
 ### Extension 
 1. Desgin a database for the transaction manager to store transaction status and logs, making transaction recovery and monitoring more convenient. 
 2. Add a selection function to allow the transaction manager to know what kind of services is needed and send prepare requests to the corresponding services. 
-3. Implement input function for the transaction manager client so that users can send transacation requests based on their requirements. 
+3. Provide a user friendly UI for the transaction manager client. 
 
 ## Getting Started
 To install and run this project, you need to have the following requirements:
