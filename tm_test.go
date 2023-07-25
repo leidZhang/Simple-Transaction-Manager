@@ -73,6 +73,8 @@ func TestTm(t *testing.T) {
 		{0, -1, -1, expectTransactionRes("Transaction failed", false)}, // service A prepare failed and service B and C rollback failed
 		{-1, 0, -1, expectTransactionRes("Transaction failed", false)}, // service B prepare failed and service A and C rollback failed
 		{-1, -1, 0, expectTransactionRes("Transaction failed", false)}, // service C prepare failed and service A and B rollback failed
+
+		// {3, 3, 3, expectTransactionRes("Transaction manager internal error", false)}, // transaction manager internal error
 	}
 	// dial 8083
 	conn, err := dial("localhost:8083")

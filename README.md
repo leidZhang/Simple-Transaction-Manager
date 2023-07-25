@@ -29,18 +29,21 @@ Some of the possible scenarios is simulated in the mock services.
 2. Error rollback: If there is error or partial success, the transaction manager will send rollback requests to all services to ensure the transaction consistency. 
 3. Retry: In cases of unstable network or unreachable services, retry can be performed to ensure successful sending or receiving of requests.
 ## Technical Debt
-### Lack of fault tolerance mechanism 
+### Lack of Fault Tolerance Mechanism 
 In the current design, the transaction manager does not have sufficient fault-tolerant mechanisms to cope with failures or unreachable services. If one or more services become unreachable, the transaction manager may not be able to handle the failure correclty. 
 ### Insecure Connection 
 Currently, the communication between servers is established using `grpc.Dial` with `insecure.NewCredentials()`. This results in an insecure connection without proper transport security, meaning data is transmitted in plaintext over the network. 
 ### Code Snipe Repetition 
 The code contains repetitive error handling code snippets of the form `if err != nil { return errorMsg(err.Error()) }`. This repetitive pattern can lead to code duplication, making the code harder to maintain and prone to potential bugs. (improved) 
+### Lack of Recovery Mechanism
+In the current design, if the transaction manager crashes, only a false transaction response will be returned. This may lead to inconsistent transactions and data loss, and increase the difficulty and cost of fixing this problem in the future. 
 
 ## Future Work
 ### Improve Techincal Debt
 1. Improve Error Handling: Refactor the code to use custom error types or a central error handling function that handles errors consistently throughout the project. This will reduce code duplication and ensure a uniform error handling strategy.
 2. Improve Connection Security: To address this technical debt, the system should be updated to use secure transport credentials to encrypt communication between servers. 
 3. Improve Fault Tolerance Mechanism: Implement the following fault-tolerant mechanism: Time out handling, Error rollback, Retry 
+4. Implement recovery function to ensure data consistency. 
 ### Extension 
 1. Desgin a database for the transaction manager to store transaction status and logs, making transaction recovery and monitoring more convenient. 
 2. Add a selection function to allow the transaction manager to know what kind of services is needed and send prepare requests to the corresponding services. 

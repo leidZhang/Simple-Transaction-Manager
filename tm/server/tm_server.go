@@ -21,7 +21,7 @@ func resMsg(feedback string, status bool) (res *dtm_grpc.TransactionResponse, er
 	}, nil
 }
 
-func getPrepareResponse(id int32, addr string) (conn *grpc.ClientConn, client dtm_grpc.TransactionManagerClient, prepareRes *dtm_grpc.PrepareResponse, err error) {
+func getPrepareRes(id int32, addr string) (conn *grpc.ClientConn, client dtm_grpc.TransactionManagerClient, prepareRes *dtm_grpc.PrepareResponse, err error) {
 	// create grpc connection
 	conn, err = grpc.Dial(addr, grpc.WithInsecure())
 	if err != nil {
@@ -84,7 +84,7 @@ func (TransactionManager) Transaction(ctx context.Context, req *dtm_grpc.Transac
 	defer func() {
 		if r := recover(); r != nil {
 			// return the a failure response
-			res, err = resMsg(r.(error).Error(), false)
+			res, err = resMsg(fmt.Sprint(r), false)
 		}
 	}()
 
@@ -94,9 +94,9 @@ func (TransactionManager) Transaction(ctx context.Context, req *dtm_grpc.Transac
 	idA, idB, idC := req.Id1, req.Id2, req.Id3
 	addrA, addrB, addrC := "localhost:8080", "localhost:8081", "localhost:8082"
 
-	connA, clientA, prepareResA, errA := getPrepareResponse(idA, addrA)
-	connB, clientB, prepareResB, errB := getPrepareResponse(idB, addrB)
-	connC, clientC, prepareResC, errC := getPrepareResponse(idC, addrC)
+	connA, clientA, prepareResA, errA := getPrepareRes(idA, addrA)
+	connB, clientB, prepareResB, errB := getPrepareRes(idB, addrB)
+	connC, clientC, prepareResC, errC := getPrepareRes(idC, addrC)
 	// check whether the services are reachable
 	if errA == nil && errB == nil && errC == nil {
 		fmt.Println("Service A prepare", prepareResA)
@@ -110,6 +110,12 @@ func (TransactionManager) Transaction(ctx context.Context, req *dtm_grpc.Transac
 	statusA := prepareResA.Status
 	statusB := prepareResB.Status
 	statusC := prepareResC.Status
+
+	// mock crash after prepare stage
+	/* if idA == 3 && idB == 3 && idC == 3 {
+		panic("Transaction manager internal error")
+	} */
+
 	// prepare failed, proceed to rollback
 	if !statusA || !statusB || !statusC {
 		return handlePartialSuccess(idA, idB, idC, clientA, clientB, clientC, connA, connB, connC)
